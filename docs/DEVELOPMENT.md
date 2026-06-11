@@ -1,0 +1,164 @@
+# ForgetMeNote v3
+
+> Visual-memory app for iOS. Photograph rooms → draw rectangles → build a
+> recursive tree of physical spaces. v3 features an editorial cornflower-blue
+> aesthetic with Instrument Serif headlines.
+
+**Bundle ID**: `com.matthewcromaz.forgetmenote.v3.dev`
+**Display name**: FMN v3
+**Min iOS**: 17.0 (built/tested on iOS 26.5)
+**Lineage**: Android Kotlin → iOS v2 SwiftUI → **v3 (this)**
+
+The sister iOS v2 lives at `~/Documents/foregtmenote-v2/` and installs as a
+separate app with a different icon — both coexist on the same iPhone.
+
+---
+
+## Quickstart
+
+```bash
+cd ~/Documents/forgetmenotev3/ios
+
+# Regenerate Xcode project from project.yml (always do this after pulling)
+xcodegen generate
+
+# Install CocoaPods
+LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install
+
+# Open Xcode (use the WORKSPACE, not the .xcodeproj)
+open ForgetMeNote.xcworkspace
+```
+
+In Xcode → device picker → "Matthew's iPhone" → ⌘R.
+
+---
+
+## Project layout (top-level)
+
+```
+forgetmenotev3/
+├── CLAUDE.md         ← read first if you're a Claude Code session
+├── README.md         ← this file
+└── ios/
+    ├── project.yml   ← xcodegen spec
+    ├── Podfile       ← ML Kit + RevenueCat (conditional)
+    ├── TESTFLIGHT.md ← App Store submission steps
+    └── ForgetMeNote/
+        ├── ForgetMeNoteApp.swift  ← @main
+        ├── Models/           ← @Model classes
+        ├── Repository/       ← @ModelActor ImageRepository
+        ├── Camera/ ML/ Notifications/ Utils/
+        ├── Views/            ← LEGACY v2 screens (preserved for navigation)
+        └── V3/                ← v3 design overhaul (all new screens + theme)
+```
+
+For full file-by-file layout, see `CLAUDE.md`.
+
+---
+
+## Build modes
+
+### For physical iPhone (full features incl. ML)
+Default — ML Kit ObjectDetection + Apple Vision both available.
+```bash
+pod install
+xcodebuild -workspace ForgetMeNote.xcworkspace -scheme ForgetMeNote \
+  -configuration Debug -destination "id=<UDID>" -allowProvisioningUpdates build
+```
+
+### For iOS Simulator (Maestro QA — no ML Kit)
+ML Kit doesn't ship arm64-Simulator slices. Conditionally exclude:
+```bash
+SKIP_MLKIT=1 pod install
+xcodebuild -workspace ForgetMeNote.xcworkspace -scheme ForgetMeNote \
+  -configuration Debug -destination "generic/platform=iOS Simulator" \
+  -allowProvisioningUpdates ARCHS=arm64 ONLY_ACTIVE_ARCH=YES build
+```
+Switching back to device mode: `pod install` (without SKIP_MLKIT).
+
+---
+
+## QA — Maestro flow
+
+Lives at `ios/qa/maestro/flows/v3_full_qa.yaml`. 23 steps. Covers:
+welcome → start tour → home greeting + carousel + room grid → find tab
++ recent searches → you tab → settings → walkthrough restart → tab nav home.
+
+Run:
+```bash
+JAVA_HOME=/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home \
+  maestro test ios/qa/maestro/flows/v3_full_qa.yaml
+```
+
+Output screenshots: `v3_01_welcome.png` … `v3_09_home_final.png` in CWD.
+
+---
+
+## V3 design system
+
+Three palettes (default: **forget-me-not** cornflower blue + cream paper).
+
+| Token | Value | Where |
+|-------|-------|-------|
+| accent | `#5B7FE0` | Big italic headline words, accent buttons, FAB |
+| accentSoft | `#A9BCF0` | Hover/pressed states |
+| accentBg | `#E8EEFB` | Subtle accent backgrounds |
+| pollen | `#F5C76E` | Flower center, "new" badge background |
+| paper | `#F7F2E8` | Page background |
+| paperEdge | `#EFE7D6` | Sectioning, paper texture variation |
+| ink / ink2 / ink3 | `#1A1D26` / `#5C5F6B` / `#9B9EA9` | Primary / secondary / tertiary text |
+
+Plus six **room hues** picked deterministically by name hash (sky, honey,
+mauve, sage, peach, wheat).
+
+Typography: **Instrument Serif** for headlines (italic emphasis on accent
+words), system font for body. Until OTF files are bundled, falls back to
+system serif.
+
+---
+
+## Notable architectural decisions
+
+- **v2 code stays.** v3 navigates into v2 detail/settings screens for now.
+  This keeps the codebase lean while the v3 surface progresses.
+- **@State mirror pattern** for SwiftData-bound toggles (see `UpdatedToggleRow`
+  in `ImageDetailScreen.swift`) — prevents the snap-back regression that hit v2.
+- **Apple Vision over ML Kit ImageLabeler** for per-object classification —
+  ~1300 specific labels vs 447 generic ones, works in Sim too.
+- **JSON-manifest export/import** (not raw SQLite swap) — survives schema
+  changes and is the path to eventual Android↔iOS cross-compatibility.
+- **xcodegen** as the single source of truth for the Xcode project. Never
+  hand-edit `.xcodeproj` — it gets regenerated.
+
+---
+
+## Common tasks
+
+### Add a new V3 screen
+1. Create `ios/ForgetMeNote/V3/Screens/V3FooScreen.swift`.
+2. Wire navigation in `V3RootView.destination(for:)` or as a `.sheet`.
+3. Add Maestro coverage in `qa/maestro/flows/v3_full_qa.yaml`.
+4. Regen project (`xcodegen generate`) — file gets picked up automatically.
+
+### Change the app icon
+- Drop a 1024×1024 PNG (no alpha) at
+  `ios/ForgetMeNote/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png`.
+- Source can be hand-designed or generated by `ios/scripts/generate_app_icon.py`.
+- Rebuild — iOS caches icons aggressively, lock+unlock the device to refresh.
+
+### Add a font
+- Drop the OTF/TTF files into `ios/ForgetMeNote/Fonts/`.
+- Add `UIAppFonts` array to `project.yml` `info.properties` listing the filenames.
+- Regen + rebuild.
+
+### Update a palette token
+- Edit `ios/ForgetMeNote/V3/Theme/V3Theme.swift`.
+- Live previews via SwiftUI's `#Preview` work.
+
+---
+
+## License & credits
+
+Private prototype. Source design overhaul from a React/Tailwind prototype
+provided by the user. App icon (closet shelving) generated via ChatGPT
+image generation. Original Android app authored by `zhum` on GitHub.

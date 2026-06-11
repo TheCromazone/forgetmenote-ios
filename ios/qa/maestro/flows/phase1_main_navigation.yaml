@@ -1,0 +1,58 @@
+# Phase 1 verification flow.
+#
+# Walks the main navigation paths and screenshots every state.
+# - launch + initial default-room seeding
+# - tap + to add a custom room
+# - open Settings via menu, back via nav-bar chevron
+# - open Help via menu, back
+# - tap an item to open detail, back
+#
+# Run from the ios/ directory:
+#   maestro test qa/maestro/flows/phase1_main_navigation.yaml
+
+appId: com.imageorganizer.app
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+- assertVisible: "Forget Me Note"
+- assertVisible: "My home"
+- assertVisible: "Good things"
+- assertVisible: "Bad things"
+- takeScreenshot: 01_main_with_default_rooms
+
+# Add a new room via the + toolbar button
+- tapOn:
+    id: "Add Room"
+- assertVisible: "Room 4"
+- takeScreenshot: 02_after_add_room
+
+# Open Settings via the menu, then pop via the nav-bar back chevron
+- tapOn: "Menu"
+- tapOn: "Settings"
+- assertVisible: "Sub-space rectangle"
+- assertVisible: "Highlight color"
+- takeScreenshot: 03_settings_screen
+- tapOn:
+    id: "Back"
+- assertVisible: "Forget Me Note"
+
+# Open Help via the menu, then back
+- tapOn: "Menu"
+- tapOn: "Help"
+- assertVisible: "Hierarchical visual memory."
+- takeScreenshot: 04_help_screen
+- tapOn:
+    id: "Back"
+- assertVisible: "Forget Me Note"
+
+# Double-tap a tree row to open Image Detail
+- doubleTapOn: "My home"
+- assertVisible: "Image"
+- assertVisible: "Type"
+- takeScreenshot: 05_image_detail
+- tapOn:
+    id: "Back"
+
+- assertVisible: "Forget Me Note"
+- takeScreenshot: 06_back_at_main

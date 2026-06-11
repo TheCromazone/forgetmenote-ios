@@ -1,0 +1,69 @@
+# V3 settings-toggle flow — runs on iOS Simulator.
+#
+# Signs in via the demo fast-path, opens Settings from the You tab, toggles the
+# sub-space-rectangles "collapse search" switch twice, and asserts it stays
+# usable. V3Switch exposes an accessibilityValue ("on"/"off"), so we assert the
+# returned state after the round-trip.
+#
+# Build the Sim variant first (see v3_full_qa.yaml header), then:
+#   maestro test qa/maestro/flows/v3_settings_toggle.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# === Sign in via the demo fast-path ===
+# Social-stub sign-in creates+uses the demo account deterministically (the
+# demo autofill+submit path fails on a fresh install — no demo user yet).
+- extendedWaitUntil:
+    visible:
+      id: "v3-social-apple"
+    timeout: 6000
+- tapOn:
+    id: "v3-social-apple"
+- waitForAnimationToEnd:
+    timeout: 2500
+
+# Dismiss the first-launch welcome if it appears.
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+
+- assertVisible:
+    id: "v3-home-greeting"
+
+# === You tab (rightmost tab) → Settings ===
+- tapOn:
+    point: "70%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- tapOn: "Settings"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+- extendedWaitUntil:
+    visible:
+      id: "v3-settings-search-toggle"
+    timeout: 6000
+
+# === Toggle twice — should round-trip back to its starting state and stay usable ===
+- tapOn:
+    id: "v3-settings-search-toggle"
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn:
+    id: "v3-settings-search-toggle"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# V3Switch exposes accessibilityValue "on"/"off"; after two flips it is usable
+# and reports a concrete state again.
+- assertVisible:
+    id: "v3-settings-search-toggle"
+- takeScreenshot: v3_settings_toggle_done

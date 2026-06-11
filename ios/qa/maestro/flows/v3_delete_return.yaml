@@ -1,0 +1,74 @@
+# V3 delete-and-return flow — runs on iOS Simulator.
+#
+# Guards the #1 delete-strand fix: after deleting an item, the screen must
+# never strand on a "Not found" dead end.
+#
+# Updated for the V3BrowseHome era: rooms are opened via search (which now
+# jumps straight to the room browse), then deleted from the ellipsis menu's
+# detail sheet. The browse self-heals onto the remaining rooms.
+#
+# Build the Sim variant first (see v3_full_qa.yaml header), then:
+#   maestro test qa/maestro/flows/v3_delete_return.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# === Sign in via the demo fast-path ===
+- extendedWaitUntil:
+    visible:
+      id: "v3-social-apple"
+    timeout: 6000
+- tapOn:
+    id: "v3-social-apple"
+- waitForAnimationToEnd:
+    timeout: 2500
+
+# Dismiss the first-launch welcome if it appears.
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+
+- assertVisible:
+    id: "v3-home-greeting"
+
+# === Open a seeded room via search (Find tab) ===
+- tapOn:
+    point: "50%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- tapOn:
+    id: "v3-search-input"
+- inputText: "Bad things"
+- waitForAnimationToEnd:
+    timeout: 1500
+- tapOn:
+    id: "v3-search-result-.*"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "v3-room-header"
+
+# === Delete the room via the ellipsis menu's detail sheet ===
+- tapOn:
+    id: "v3-room-menu"
+- waitForAnimationToEnd:
+    timeout: 1500
+- tapOn:
+    id: "v3-detail-delete"
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "Delete"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# === Assert no "Not found" strand — the browse self-heals ===
+- assertNotVisible: "Not found"
+- assertNotVisible: "Bad things"
+- takeScreenshot: v3_delete_return_done

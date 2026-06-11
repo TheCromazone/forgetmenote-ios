@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      Forget Me Note privacy manifest.
+
+      The app stores all user data on-device (SwiftData + Documents/images).
+      We do not collect, share, or transmit any user data over the network.
+      We do not use third-party tracking SDKs.
+
+      Required-reason API declarations follow Apple's PrivacyInfo guidance for
+      iOS 17+ submissions.
+    -->
+
+    <!-- We do not collect any data types. -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+
+    <!-- We do not track users across apps or websites. -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <!-- No tracking domains. -->
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+
+    <!-- Required-reason APIs we use. -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <!-- FileManager.urls(for:in:) for Documents directory access -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- C617.1: Inside app container, files Apple specifies in the
+                     Documents and Library/Application Support folders. -->
+                <string>C617.1</string>
+            </array>
+        </dict>
+        <!-- UserDefaults for walkthrough-completion flag + small UI state -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- CA92.1: Access user defaults for app-only state. -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+        <!-- systemUptime via background-task scheduling diagnostics, dispatch_time, etc. -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- 35F9.1: Measure time between events within the app. -->
+                <string>35F9.1</string>
+            </array>
+        </dict>
+        <!-- File size lookups for export/import -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- E174.1: Free-space check before performing file operations. -->
+                <string>E174.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

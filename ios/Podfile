@@ -1,0 +1,46 @@
+platform :ios, '17.0'
+use_frameworks!
+install! 'cocoapods', :deterministic_uuids => false
+
+def forgetmenote_pods
+  # On-device ML (matches Android's ML Kit usage 1:1).
+  # IMPORTANT: ML Kit ships arm64 device slices but NOT arm64-Simulator slices.
+  # On Apple Silicon Macs, Simulator builds will fail to link these pods.
+  # Use SKIP_MLKIT=1 pod install to build for Simulator (e.g. Maestro QA).
+  unless ENV['SKIP_MLKIT'] == '1'
+    pod 'GoogleMLKit/ObjectDetection'
+    pod 'GoogleMLKit/ImageLabeling'
+  end
+
+  # In-app purchases
+  pod 'RevenueCat'
+  pod 'RevenueCatUI'
+end
+
+target 'ForgetMeNote' do
+  forgetmenote_pods
+end
+
+target 'ForgetMeNoteV4' do
+  forgetmenote_pods
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0'
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+    end
+  end
+
+  # ML Kit ships pod xcconfigs that EXCLUDED_ARCHS[sdk=iphonesimulator*]=arm64,
+  # which is correct for Intel Macs but breaks Apple Silicon Mac Simulator builds.
+  # Strip those lines from every generated xcconfig so arm64 Simulator builds work.
+  Dir.glob("Pods/Target Support Files/**/*.xcconfig").each do |xcconfig_path|
+    xcconfig = File.read(xcconfig_path)
+    cleaned = xcconfig.lines.reject { |l| l =~ /^\s*EXCLUDED_ARCHS\[sdk=iphonesimulator\*\]\s*=/ }.join
+    if cleaned != xcconfig
+      File.write(xcconfig_path, cleaned)
+    end
+  end
+end

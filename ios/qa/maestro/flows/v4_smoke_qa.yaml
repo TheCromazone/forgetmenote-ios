@@ -1,0 +1,38 @@
+appId: com.matthewcromaz.forgetmenote.v4.dev
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "v4-demo-account"
+    timeout: 20000
+- tapOn:
+    id: "v4-demo-account"
+- extendedWaitUntil:
+    visible:
+      id: "v4-tour-skip"
+    timeout: 8000
+- tapOn:
+    id: "v4-tour-skip"
+- extendedWaitUntil:
+    visible:
+      id: "v4-create-room-primary"
+    timeout: 8000
+- assertVisible: "Rooms"
+- takeScreenshot: v4_01_home
+
+- extendedWaitUntil:
+    visible:
+      id: "v4-delete-first-room-card"
+    timeout: 6000
+- tapOn:
+    id: "v4-delete-first-room-card"
+- extendedWaitUntil:
+    visible: "Delete room"
+    timeout: 4000
+- tapOn:
+    point: "50%,91%"
+- extendedWaitUntil:
+    visible: "Rooms"
+    timeout: 5000
+- takeScreenshot: v4_02_room_deleted

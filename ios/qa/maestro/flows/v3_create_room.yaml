@@ -1,0 +1,68 @@
+# V3 create-room flow — runs on iOS Simulator.
+#
+# Signs in via the demo fast-path, then creates a new "Garage" room with a
+# chosen hue and asserts the new tile appears on Home.
+#
+# Build the Sim variant first (see v3_full_qa.yaml header), then:
+#   maestro test qa/maestro/flows/v3_create_room.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# === Sign in via the demo fast-path ===
+# Social-stub sign-in creates+uses the demo account deterministically (the
+# demo autofill+submit path fails on a fresh install — no demo user yet).
+- extendedWaitUntil:
+    visible:
+      id: "v3-social-apple"
+    timeout: 6000
+- tapOn:
+    id: "v3-social-apple"
+- waitForAnimationToEnd:
+    timeout: 2500
+
+# Dismiss the first-launch welcome if it appears.
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+
+- assertVisible:
+    id: "v3-home-greeting"
+
+# === Open the New Room sheet (header add menu → "New room") ===
+- tapOn:
+    id: "v3-home-add"
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "New room"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# Pick a hue (third swatch) and name the room.
+- tapOn:
+    id: "v3-newroom-hue-2"
+- tapOn:
+    id: "v3-newroom-name"
+- inputText: "Garage"
+
+# Dismiss the keyboard by tapping a neutral point near the top of the sheet.
+- tapOn:
+    point: "50%, 12%"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# === Create the room ===
+- tapOn:
+    id: "v3-newroom-create"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- assertVisible: "Garage"
+- takeScreenshot: v3_create_room_done

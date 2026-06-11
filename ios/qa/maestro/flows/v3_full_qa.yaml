@@ -1,0 +1,142 @@
+# V3 full-app QA flow — runs on iOS Simulator.
+#
+# Covers the v3 redesign:
+#   - First-launch welcome screen (flower scatter + serif headline)
+#   - Home: greeting, "welcome back" headline, flower stat row, room grid
+#   - Find tab: search input, tag chips
+#   - You tab: stat cards, action list, walkthrough restart
+#   - Tab navigation between home / find / you
+#
+# Build the Sim variant first:
+#   SKIP_MLKIT=1 pod install
+#   xcodebuild -workspace ForgetMeNote.xcworkspace -scheme ForgetMeNote \
+#     -configuration Debug -destination "generic/platform=iOS Simulator" \
+#     -allowProvisioningUpdates ARCHS=arm64 ONLY_ACTIVE_ARCH=YES build
+#   xcrun simctl install booted /path/to/ForgetMeNote.app
+#
+# Then:
+#   maestro test qa/maestro/flows/v3_full_qa.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# === Step 0: Sign in via the Apple social stub ===
+# Deterministic entry that avoids the iOS-26.5-sim SecureField/keyboard
+# flakiness (typing into a SecureField + the post-submit transition are
+# intermittent on the sim). The real email/password sign-up + keyboard-Done
+# fix is exercised by the dedicated v3_signup.yaml flow.
+- extendedWaitUntil:
+    visible:
+      id: "v3-signin-go-signup"
+    timeout: 6000
+- assertVisible:
+    id: "v3-signin-go-signup"
+- assertVisible:
+    id: "v3-social-apple"
+- tapOn:
+    id: "v3-social-apple"
+- waitForAnimationToEnd:
+    timeout: 2500
+- takeScreenshot: v3_00_signed_in
+
+# === Step 1: First-launch welcome (conditional) ===
+# The welcome screen only shows on a genuine first launch; clearState does not
+# reliably reset the "welcome shown" UserDefault on the sim, so handle both:
+# dismiss it if present, otherwise we're already on Home.
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - takeScreenshot: v3_01_welcome
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+
+# === Step 2: Home screen ===
+# The "Hi {name}, welcome back." headline is two sibling Texts SwiftUI merges
+# into one a11y node, so assert the combined id instead of a fragile substring.
+- assertVisible:
+    id: "v3-home-greeting"
+- takeScreenshot: v3_02_home
+- assertVisible: "Your rooms"
+- takeScreenshot: v3_03_home_full
+
+# === Step 3: Find tab — use point tap (middle of tab bar at bottom) ===
+# "Recent searches" is now real + conditional (hidden for a brand-new user),
+# so assert the always-present search input instead.
+- tapOn:
+    point: "50%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- assertVisible:
+    id: "v3-search-input"
+- takeScreenshot: v3_04_find
+
+# === Step 4: You tab — tap rightmost tab ===
+- tapOn:
+    point: "70%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- assertVisible: "places"
+- assertVisible: "Settings"
+- assertVisible: "Help"
+- assertVisible: "Show walkthrough"
+- takeScreenshot: v3_06_you_tab
+
+# === Step 5: Settings via You tab ===
+- tapOn: "Settings"
+- waitForAnimationToEnd:
+    timeout: 1500
+# V3SettingsSection renders titles via .uppercased(), so match the uppercase.
+- assertVisible: "SUB-SPACE RECTANGLES"
+- takeScreenshot: v3_07_settings_via_you
+
+# Back — the v3 nav header back button carries id "v3-nav-back" (the label is
+# "Back" but Maestro tapOn id matches the identifier, not the label).
+- tapOn:
+    id: "v3-nav-back"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Step 6: Show walkthrough (guided tour) from You tab ===
+# "Show walkthrough" (id v3-you-walkthrough) presents the V3Walkthrough tour
+# overlay (id v3-walkthrough), NOT the first-launch welcome screen. Dismiss
+# via the tour's Skip button (id v3-tour-skip).
+- tapOn:
+    id: "v3-you-walkthrough"
+- extendedWaitUntil:
+    visible:
+      id: "v3-walkthrough"
+    timeout: 4000
+- takeScreenshot: v3_08_walkthrough
+- tapOn:
+    id: "v3-tour-skip"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Step 7: Back to Home — tap leftmost tab ===
+- tapOn:
+    point: "28%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- assertVisible:
+    id: "v3-home-greeting"
+- takeScreenshot: v3_09_home_final
+
+# === Step 8: Sign out via You tab ===
+- tapOn:
+    point: "70%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- assertVisible:
+    id: "v3-you-signout"
+- tapOn:
+    id: "v3-you-signout"
+- extendedWaitUntil:
+    visible:
+      id: "v3-signin-go-signup"
+    timeout: 4000
+- takeScreenshot: v3_99_signed_out

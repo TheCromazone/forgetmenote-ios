@@ -1,0 +1,54 @@
+# V3 search flow — runs on iOS Simulator.
+#
+# Signs in via the demo fast-path, switches to the Find tab, types a likely
+# seeded room name into the search input, and asserts a matching row appears.
+#
+# Build the Sim variant first (see v3_full_qa.yaml header), then:
+#   maestro test qa/maestro/flows/v3_search.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# === Sign in via the demo fast-path ===
+# Social-stub sign-in creates+uses the demo account deterministically (the
+# demo autofill+submit path fails on a fresh install — no demo user yet).
+- extendedWaitUntil:
+    visible:
+      id: "v3-social-apple"
+    timeout: 6000
+- tapOn:
+    id: "v3-social-apple"
+- waitForAnimationToEnd:
+    timeout: 2500
+
+# Dismiss the first-launch welcome if it appears.
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+
+- assertVisible:
+    id: "v3-home-greeting"
+
+# === Find tab (middle of the bottom tab bar) ===
+- tapOn:
+    point: "50%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Search for a seeded room name ===
+- tapOn:
+    id: "v3-search-input"
+- inputText: "My home"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# A result row matching the seeded "My home" room should appear.
+- assertVisible: "My home"
+- takeScreenshot: v3_search_done

@@ -1,0 +1,24 @@
+# Tiny helper: sign in and land on Home so we can screenshot the capture FAB
+# vs. the tab bar. Not part of the QA suite.
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- launchApp
+- runFlow:
+    when:
+      visible:
+        id: "v3-social-apple"
+    commands:
+      - tapOn:
+          id: "v3-social-apple"
+      - waitForAnimationToEnd:
+          timeout: 2500
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+- waitForAnimationToEnd:
+    timeout: 1500
+- takeScreenshot: /tmp/fab_home

@@ -1,0 +1,39 @@
+appId: com.matthewcromaz.forgetmenote.v4.dev
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "v4-demo-account"
+    timeout: 20000
+- tapOn:
+    id: "v4-demo-account"
+- extendedWaitUntil:
+    visible:
+      id: "v4-walkthrough"
+    timeout: 8000
+- assertVisible: "Start with rooms"
+- tapOn:
+    id: "v4-tour-next"
+- assertVisible: "Capture where things live"
+- tapOn:
+    id: "v4-tour-skip"
+- extendedWaitUntil:
+    visible:
+      id: "v4-tab-you"
+    timeout: 8000
+- tapOn:
+    id: "v4-tab-you"
+- extendedWaitUntil:
+    visible:
+      id: "v4-you-walkthrough"
+    timeout: 6000
+- tapOn:
+    id: "v4-you-walkthrough"
+- extendedWaitUntil:
+    visible:
+      id: "v4-walkthrough"
+    timeout: 6000
+- assertVisible: "Start with rooms"
+- tapOn:
+    id: "v4-tour-skip"

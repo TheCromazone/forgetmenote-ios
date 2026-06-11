@@ -1,0 +1,67 @@
+# V3 smoke QA — launches with -fmnAutoDemo (sim-only) to land straight on Home,
+# bypassing the flaky iOS-26 sign-in form so the flow runs reliably on a
+# memory-constrained host. Exercises: Home + capture FAB, Find + keyboard
+# dismiss, room drill-in, and detection trigger.
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- launchApp:
+    arguments:
+      fmnAutoDemo: true
+- assertVisible:
+    id: "v3-home-greeting"
+- takeScreenshot: smoke_01_home
+
+# Capture FAB present + opens the capture sheet, then dismiss.
+- assertVisible:
+    id: "v3-capture-fab"
+- tapOn:
+    id: "v3-capture-fab"
+- waitForAnimationToEnd:
+    timeout: 1500
+- takeScreenshot: smoke_02_capture_sheet
+- tapOn:
+    point: "50%, 8%"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Find tab + keyboard dismiss (the reported bug).
+- tapOn:
+    point: "50%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- assertVisible:
+    id: "v3-search-input"
+- tapOn:
+    id: "v3-search-input"
+- inputText: "home"
+- waitForAnimationToEnd:
+    timeout: 800
+# Tap an empty area to dismiss the keyboard, then confirm we can still reach
+# the tab bar (i.e. the keyboard no longer traps us).
+- tapOn:
+    point: "50%, 40%"
+- waitForAnimationToEnd:
+    timeout: 800
+- tapOn:
+    point: "28%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1200
+- assertVisible:
+    id: "v3-home-greeting"
+- takeScreenshot: smoke_03_back_home
+
+# Drill into a seeded room → Android-style carousel + hierarchy tree.
+- tapOn: "My home"
+- waitForAnimationToEnd:
+    timeout: 1500
+# The two-pane browse screen: swipe carousel on top, nested tree below.
+- assertVisible:
+    id: "v3-browse-tree"
+- takeScreenshot: smoke_04_browse
+# Swipe the carousel left → right to move between rooms/spaces.
+- swipe:
+    direction: LEFT
+    duration: 400
+- waitForAnimationToEnd:
+    timeout: 1000
+- takeScreenshot: smoke_05_browse_swiped

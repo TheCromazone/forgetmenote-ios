@@ -1,0 +1,129 @@
+# Phase 8 full-app QA flow — runs on iOS Simulator.
+#
+# Covers everything new in Phases 5-8:
+#   - First-launch walkthrough (auto-shows, navigates Next/Done)
+#   - Settings sliders + color picker + paywall stub
+#   - Multi-select edit mode + batch delete
+#   - Swipe-to-mark-updated / swipe-to-delete (single row)
+#   - Export to .zip (just initiates the share sheet)
+#
+# Run from ios/:
+#   maestro test qa/maestro/flows/phase8_full_qa.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# === Step 1: Walkthrough fires on first launch ===
+- extendedWaitUntil:
+    visible: "Welcome to ForgetMeNote"
+    timeout: 6000
+- takeScreenshot: 01_walkthrough_welcome
+- tapOn: "Start Tour"
+- waitForAnimationToEnd:
+    timeout: 1500
+- takeScreenshot: 02_walkthrough_menu_spotlight
+
+# Step through every walkthrough step
+- repeat:
+    times: 5
+    commands:
+      - tapOn: "Next"
+      - waitForAnimationToEnd:
+          timeout: 1500
+- takeScreenshot: 03_walkthrough_last_step
+- tapOn: "Skip"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Step 2: Main screen renders with default rooms ===
+- assertVisible: "Forget Me Note"
+- assertVisible: "My home"
+- takeScreenshot: 04_main_with_default_rooms
+
+# === Step 3: Insert demo Space via debug menu ===
+- tapOn:
+    id: "Menu"
+- tapOn:
+    id: "Insert demo Space"
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    id: "ok-button"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible: "Demo Photo"
+- takeScreenshot: 05_after_demo_space
+
+# === Step 4: Open detail via the carousel card. The default first card
+# is "My home" (a Room, no image → no zoom button); that's enough surface
+# to test the toggle.
+- tapOn:
+    point: "50%, 22%"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "Mark as Updated"
+- takeScreenshot: 06_detail_loaded
+
+# === Step 5: The cursed toggle — confirm @State mirror pattern works ===
+- tapOn: "Mark as Updated"
+- waitForAnimationToEnd:
+    timeout: 1500
+- takeScreenshot: 07_after_mark_updated
+- tapOn: "Mark as Updated"
+- waitForAnimationToEnd:
+    timeout: 1500
+- takeScreenshot: 08_after_unmark_updated
+
+# Back to main
+- tapOn:
+    id: "Back"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Step 6: Settings screen ===
+- tapOn:
+    id: "Menu"
+- tapOn: "Settings"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "Settings"
+- takeScreenshot: 09_settings_top
+
+# Paywall surface
+- tapOn:
+    id: "settings-upgrade"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "Forget Me Note Pro"
+- takeScreenshot: 10_paywall_stub
+- tapOn:
+    id: "paywall-close"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# Walkthrough restart
+- tapOn:
+    id: "settings-show-walkthrough"
+- extendedWaitUntil:
+    visible: "Welcome to ForgetMeNote"
+    timeout: 4000
+- takeScreenshot: 11_walkthrough_restarted
+- tapOn: "Skip"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Step 7: Multi-select edit mode ===
+- tapOn:
+    id: "edit-mode-toggle"
+- waitForAnimationToEnd:
+    timeout: 1500
+- takeScreenshot: 12_edit_mode_active
+- tapOn:
+    id: "edit-mode-toggle"   # Done
+- waitForAnimationToEnd:
+    timeout: 1500
+
+- takeScreenshot: 13_back_to_main_done

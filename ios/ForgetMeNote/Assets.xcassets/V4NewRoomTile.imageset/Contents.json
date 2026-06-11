@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "V4NewRoomTile.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

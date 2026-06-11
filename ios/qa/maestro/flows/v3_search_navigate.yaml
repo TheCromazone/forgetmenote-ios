@@ -1,0 +1,60 @@
+# V3 search-navigate flow — runs on iOS Simulator.
+#
+# Verifies that tapping a search result jumps straight to the matched item:
+# a room result lands on the room browse (V3RoomScreen) centered on it.
+# (Photo / sub-picture routing is covered by V3SearchDestinationTests.)
+#
+# Build the Sim variant first (see v3_full_qa.yaml header), then:
+#   maestro test qa/maestro/flows/v3_search_navigate.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# === Sign in via the demo fast-path ===
+- extendedWaitUntil:
+    visible:
+      id: "v3-social-apple"
+    timeout: 6000
+- tapOn:
+    id: "v3-social-apple"
+- waitForAnimationToEnd:
+    timeout: 2500
+
+# Dismiss the first-launch welcome if it appears.
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+
+- assertVisible:
+    id: "v3-home-greeting"
+
+# === Find tab (middle of the bottom tab bar) ===
+- tapOn:
+    point: "50%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Search a seeded room and tap the result ===
+- tapOn:
+    id: "v3-search-input"
+- inputText: "Good things"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+- tapOn:
+    id: "v3-search-result-.*"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# We should be ON the room browse, centered on the tapped room.
+- assertVisible:
+    id: "v3-room-header"
+- assertVisible: "Good things"
+- takeScreenshot: v3_search_navigate_done

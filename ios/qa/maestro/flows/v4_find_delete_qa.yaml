@@ -1,0 +1,45 @@
+appId: com.matthewcromaz.forgetmenote.v4.dev
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "v4-demo-account"
+    timeout: 20000
+- tapOn:
+    id: "v4-demo-account"
+- extendedWaitUntil:
+    visible:
+      id: "v4-tour-skip"
+    timeout: 8000
+- tapOn:
+    id: "v4-tour-skip"
+- extendedWaitUntil:
+    visible:
+      id: "v4-tab-find"
+    timeout: 8000
+- tapOn:
+    id: "v4-tab-find"
+- extendedWaitUntil:
+    visible:
+      id: "v4-search-input"
+    timeout: 5000
+- tapOn:
+    id: "v4-search-input"
+- inputText: "My home"
+- extendedWaitUntil:
+    visible:
+      id: "v4-delete-search-first-result"
+    timeout: 6000
+- takeScreenshot: v4_find_01_result
+- tapOn:
+    id: "v4-delete-search-first-result"
+- extendedWaitUntil:
+    visible: "Delete room"
+    timeout: 4000
+- tapOn:
+    point: "50%,56%"
+- extendedWaitUntil:
+    visible: "0 matches"
+    timeout: 6000
+- takeScreenshot: v4_find_02_deleted

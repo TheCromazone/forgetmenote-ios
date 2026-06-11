@@ -1,0 +1,64 @@
+# V3 walkthrough + sign-out tail flow — runs on iOS Simulator.
+#
+# Short flow that covers the tail of the main suite (the guided-tour Skip fix
+# and sign-out) on its own, so it finishes well inside the sim's driver window.
+#
+#   maestro test qa/maestro/flows/v3_walkthrough_signout.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# Social-stub sign-in (deterministic; creates+uses the demo account).
+- extendedWaitUntil:
+    visible:
+      id: "v3-social-apple"
+    timeout: 6000
+- tapOn:
+    id: "v3-social-apple"
+- waitForAnimationToEnd:
+    timeout: 2500
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+- assertVisible:
+    id: "v3-home-greeting"
+
+# === You tab → Show walkthrough (guided tour) ===
+- tapOn:
+    point: "70%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- tapOn:
+    id: "v3-you-walkthrough"
+- extendedWaitUntil:
+    visible:
+      id: "v3-walkthrough"
+    timeout: 4000
+# The tour's Skip button must be individually accessible (regression guard for
+# the container-a11y-id fix that previously hid it).
+- tapOn:
+    id: "v3-tour-skip"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Sign out ===
+- tapOn:
+    point: "70%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- assertVisible:
+    id: "v3-you-signout"
+- tapOn:
+    id: "v3-you-signout"
+- extendedWaitUntil:
+    visible:
+      id: "v3-signin-go-signup"
+    timeout: 4000
+- takeScreenshot: v3_tail_signed_out

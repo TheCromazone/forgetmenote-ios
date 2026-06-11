@@ -1,0 +1,102 @@
+# Phase 4 verification — runs on physical iPhone.
+#
+# Verifies the two features the user couldn't manually confirm:
+# 4. Long-press tree-row context menu (Mark Updated, Delete)
+# 5. Child bounding-box overlay on parent Space photo
+#
+# Run from the ios/ directory:
+#   maestro test --device <IPHONE_UDID> qa/maestro/flows/phase4_iphone_verification.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+- assertVisible: "Forget Me Note"
+- assertVisible: "My home"
+- takeScreenshot: 01_initial
+
+# === Test item 4: Long-press context menu ===
+- longPressOn:
+    id: "tree-row-My home"
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: 02_context_menu_open
+- assertVisible: "Mark as Updated"
+- assertVisible: "Open detail"
+- assertVisible: "Delete"
+
+# Tap "Mark as Updated" — should close menu and apply orange highlight
+- tapOn: "Mark as Updated"
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: 03_after_mark_updated
+
+# Long-press again — menu should now show "Mark as Not Updated"
+- longPressOn:
+    id: "tree-row-My home"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "Mark as Not Updated"
+- takeScreenshot: 04_toggle_label_flipped
+# Dismiss the menu by tapping outside
+- tapOn:
+    point: "50%, 85%"
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# === Test item 5: Child bounding box overlay ===
+# Need a parent Space with at least one child. Use debug menu to insert one.
+- tapOn:
+    id: "Menu"
+- tapOn:
+    id: "Insert demo Space"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: "ok-button"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "Demo Photo"
+    timeout: 5000
+
+# Navigate to Demo Photo detail via the tree row
+- doubleTapOn:
+    id: "tree-row-Demo Photo"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "Updated flag"
+    timeout: 5000
+- takeScreenshot: 05_parent_detail_no_children_yet
+
+# Insert a sub-space (via the per-screen debug button)
+- tapOn:
+    id: "Insert demo Sub-Space"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "Where on"
+    timeout: 5000
+- takeScreenshot: 06_create_child_with_rectangle_selector
+- tapOn:
+    id: "ok-button"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Back on parent's detail screen — the photo should now have blue child overlay
+- extendedWaitUntil:
+    visible: "Demo Sub"
+    timeout: 5000
+- takeScreenshot: 07_parent_with_child_overlay
+- assertVisible: "Demo Sub"
+
+# Pop back to verify
+- tapOn:
+    id: "Back"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "Forget Me Note"
+- takeScreenshot: 08_back_at_main

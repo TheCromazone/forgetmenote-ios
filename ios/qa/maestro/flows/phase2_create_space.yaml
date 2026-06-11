@@ -1,0 +1,75 @@
+# Phase 2 verification flow.
+#
+# What this verifies (Simulator-automatable):
+# - Default rooms still seed on launch
+# - The debug "Insert demo Space" menu action stages a generated photo
+# - CreateChildScreen renders the photo preview + auto-filled name (suggested title)
+# - Tapping OK saves a new Space and pops back to MainScreen
+# - The new Space appears in the carousel + tree, distinguishable from Rooms
+#   (uses the photo icon, not the house icon)
+#
+# What this DOES NOT cover (system-process / Simulator limitations):
+# - PhotosPicker tap-to-select (system remote view, not reliably driveable by Maestro)
+# - Camera capture (no camera on Simulator)
+# - The InteractiveRectangleSelector (no parent-Space to draw a rectangle on yet
+#   — first we need a Space, then we'd nest a sub-space inside it)
+# Those are exercised manually on the physical iPhone.
+#
+# Run from the ios/ directory:
+#   maestro test qa/maestro/flows/phase2_create_space.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+- assertVisible: "Forget Me Note"
+- assertVisible: "My home"
+- assertVisible: "Good things"
+- assertVisible: "Bad things"
+- takeScreenshot: 01_initial_state
+
+# Open the menu and trigger the debug demo-Space insertion
+- tapOn:
+    id: "Menu"
+- tapOn:
+    id: "Insert demo Space"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- extendedWaitUntil:
+    visible: "Name"
+    timeout: 5000
+- assertVisible: "New photo"
+- assertVisible: "Demo Photo"  # The suggested title pre-fills the Name field
+- takeScreenshot: 02_create_child_with_suggested_title
+
+# Accept the auto-filled name and save
+- tapOn:
+    id: "ok-button"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Back on MainScreen — the new Space named "Demo Photo" should appear in the tree.
+- extendedWaitUntil:
+    visible: "Demo Photo"
+    timeout: 5000
+- assertVisible: "Demo Photo"
+- takeScreenshot: 03_new_space_in_main
+
+# Double-tap to open the detail screen and verify the photo persisted
+- doubleTapOn: "Demo Photo"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "Updated flag"
+    timeout: 5000
+- assertVisible: "Updated flag"  # detail-screen-only label confirms we navigated
+- takeScreenshot: 04_detail_shows_space_type
+
+# Back to main
+- tapOn:
+    id: "Back"
+- assertVisible: "Forget Me Note"
+- takeScreenshot: 05_back_at_main

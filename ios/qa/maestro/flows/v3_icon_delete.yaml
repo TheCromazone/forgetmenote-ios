@@ -1,0 +1,75 @@
+# V3 icon-delete flow — runs on iOS Simulator.
+#
+# Verifies the two new delete-from-the-icon affordances on Home:
+#   A) the trash button shown on the SELECTED carousel card (one tap), and
+#   B) long-press on a hierarchy-tree row → context menu → Delete.
+# Both funnel into the same confirmation alert + recursive repository delete.
+#
+# Build the Sim variant first (see v3_full_qa.yaml header), then:
+#   maestro test qa/maestro/flows/v3_icon_delete.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+
+# === Sign in via the demo fast-path ===
+- extendedWaitUntil:
+    visible:
+      id: "v3-social-apple"
+    timeout: 6000
+- tapOn:
+    id: "v3-social-apple"
+- waitForAnimationToEnd:
+    timeout: 2500
+
+# Dismiss the first-launch welcome if it appears.
+- runFlow:
+    when:
+      visible: "Start remembering"
+    commands:
+      - tapOn: "Start remembering"
+      - waitForAnimationToEnd:
+          timeout: 1500
+
+- assertVisible:
+    id: "v3-home-greeting"
+
+# === A) Trash button on the selected carousel card ===
+# First node ("My home", the oldest seeded room) is auto-selected on appear,
+# so its card shows the one-tap trash overlay.
+- assertVisible: "My home"
+- tapOn:
+    id: "v3-card-delete-.*"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Confirmation alert → Delete.
+- assertVisible: "Delete My home?"
+- tapOn: "Delete"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- assertNotVisible: "My home"
+- takeScreenshot: v3_icon_delete_card_done
+
+# === B) Long-press a tree row → context menu Delete ===
+# "Good things" is now the first root row in the tree.
+- longPressOn:
+    id: "v3-tree-row-.*"
+    index: 0
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# Context-menu Delete, then the confirmation alert's Delete.
+- tapOn: "Delete"
+- waitForAnimationToEnd:
+    timeout: 1000
+- assertVisible: "Delete Good things?"
+- tapOn: "Delete"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- assertNotVisible: "Good things"
+- takeScreenshot: v3_icon_delete_longpress_done

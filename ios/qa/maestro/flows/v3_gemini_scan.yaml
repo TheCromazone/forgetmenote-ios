@@ -1,0 +1,62 @@
+# V3 Gemini enhanced-scan E2E — runs on iOS Simulator.
+#
+# Proves the WHOLE Gemini scan pipeline inside the real app: launch args point
+# the app at a local mock server (qa/mock_gemini_server.py must be running)
+# and inject a test key; `-fmnSeedPhoto` seeds a demo PHOTO space; the flow
+# navigates to it via search, runs "Find objects", and asserts the Gemini
+# result message + a returned object label render.
+#
+#   python3 qa/mock_gemini_server.py &        # start mock first
+#   maestro test qa/maestro/flows/v3_gemini_scan.yaml
+
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+    arguments:
+      fmnAutoDemo: true
+      fmnSeedPhoto: true
+      v3_gemini_api_key: "TEST-KEY"
+      v3_gemini_endpoint: "http://127.0.0.1:8765"
+
+# fmnAutoDemo boots straight to Home (demo account, welcome dismissed).
+- extendedWaitUntil:
+    visible:
+      id: "v3-home-greeting"
+    timeout: 10000
+
+# === Open the seeded photo space via search (jumps straight to it) ===
+- tapOn:
+    point: "50%, 96%"
+- waitForAnimationToEnd:
+    timeout: 1500
+- tapOn:
+    id: "v3-search-input"
+- inputText: "Demo shelf"
+- waitForAnimationToEnd:
+    timeout: 1500
+- tapOn:
+    id: "v3-search-result-.*"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# === Run the scan — must hit the mock Gemini, not Apple Vision ===
+- tapOn:
+    id: "v3-space-detect"
+- extendedWaitUntil:
+    visible: "Enhanced scan ✦ Gemini"
+    timeout: 10000
+
+# Both canned objects rendered as overlay labels.
+- assertVisible: "demo mug"
+- assertVisible: "demo book"
+- takeScreenshot: v3_gemini_scan_done
+
+# === Dismiss works (the new ✕) ===
+- tapOn:
+    id: "v3-space-clear-scan"
+- waitForAnimationToEnd:
+    timeout: 1000
+- assertNotVisible: "demo mug"
+- takeScreenshot: v3_gemini_scan_cleared

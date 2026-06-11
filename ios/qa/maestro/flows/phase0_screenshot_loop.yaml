@@ -1,0 +1,33 @@
+# Phase 0 screenshot-loop demo.
+#
+# Proves the QA pattern: launch the app, capture the initial state, perform
+# repeated UI actions, and screenshot after each. The result is a sequence of
+# PNGs that document the behavior visually and can be diffed against baselines
+# in CI.
+#
+# Run from the ios/ directory:
+#   maestro test qa/maestro/flows/phase0_screenshot_loop.yaml
+#
+# Screenshots land in ./screenshots/ by default (maestro's working dir is the
+# directory the YAML lives in unless --output is specified).
+
+appId: com.imageorganizer.app
+---
+- clearState
+- launchApp:
+    clearKeychain: true
+- takeScreenshot: 01_initial_empty
+- assertVisible: "Forget Me Note"
+- assertVisible: "Items in DB"
+- tapOn: "Add Demo Room"
+- takeScreenshot: 02_after_first_add
+- assertVisible: "Demo 1"
+- tapOn: "Add Demo Room"
+- takeScreenshot: 03_after_second_add
+- assertVisible: "Demo 2"
+- tapOn: "Add Demo Room"
+- takeScreenshot: 04_after_third_add
+- assertVisible: "Demo 3"
+- tapOn: "Add Demo Room"
+- takeScreenshot: 05_after_fourth_add
+- assertVisible: "Demo 4"
