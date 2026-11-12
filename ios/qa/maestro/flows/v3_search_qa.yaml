@@ -1,0 +1,48 @@
+# Clears app data: run on a disposable simulator, not a personal installation.
+# Simulator-only launch flags seed a local demo photo without camera/network.
+appId: com.matthewcromaz.forgetmenote.v3.dev
+---
+- clearState
+- launchApp:
+    arguments:
+      fmnAutoDemo: true
+      fmnSeedPhoto: true
+- extendedWaitUntil:
+    visible:
+      id: "v3-home-greeting"
+    timeout: 10000
+- tapOn:
+    id: "v3-home-search"
+- assertVisible:
+    id: "v3-search-hint"
+- takeScreenshot: search_first_use
+- tapOn:
+    id: "v3-search-input"
+- inputText: "Demo shelf"
+- assertVisible:
+    id: "v3-search-result-.*"
+- takeScreenshot: search_results
+- tapOn:
+    id: "v3-search-clear"
+- assertVisible:
+    id: "v3-search-hint"
+- tapOn:
+    id: "v3-search-input"
+- inputText: "a very long missing item name to check empty search recovery"
+- assertVisible:
+    id: "v3-search-empty"
+- takeScreenshot: search_no_matches
+- tapOn:
+    id: "v3-search-empty-clear"
+- assertVisible:
+    id: "v3-search-hint"
+- tapOn:
+    id: "v3-search-input"
+- inputText: "My home"
+- pressKey: Enter
+- assertVisible:
+    id: "v3-search-result-.*"
+- tapOn:
+    id: "v3-search-result-.*"
+- assertVisible:
+    id: "v3-browse-tree"

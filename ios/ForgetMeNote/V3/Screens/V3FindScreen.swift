@@ -2,14 +2,16 @@ import SwiftUI
 import SwiftData
 
 /// Pure, testable item filter shared by `V3FindScreen.results`.
-/// Matches `query` (case-insensitive) against name, notes, or any tag.
-/// Returns the input order for an empty/whitespace query → no matches.
+/// Matches name, notes, or tags; a leading # searches only tags.
+/// Empty/whitespace queries and a bare # return no matches.
 func v3FilterItems(_ items: [ImageItem], query: String) -> [ImageItem] {
-    let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+    let text = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    let tagsOnly = text.hasPrefix("#")
+    let q = tagsOnly ? String(text.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines) : text
     guard !q.isEmpty else { return [] }
     return items.filter { item in
-        item.name.lowercased().contains(q) ||
-        item.notes.lowercased().contains(q) ||
+        (!tagsOnly && (item.name.lowercased().contains(q) ||
+                      item.notes.lowercased().contains(q))) ||
         item.tags.contains(where: { $0.lowercased().contains(q) })
     }
 }
@@ -34,6 +36,10 @@ struct V3FindScreen: View {
     @State private var query: String = ""
     @FocusState private var searchFocused: Bool
 
+    private var hasQuery: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     /// Persisted recent searches as a JSON-encoded [String] (most-recent-first,
     /// capped + deduped). Brand-new users start empty — no fake seed.
     @AppStorage("v3_recent_searches") private var recentSearchesData: Data = Data()
@@ -54,7 +60,7 @@ struct V3FindScreen: View {
 
     /// Record `q` as the newest recent search: trim, dedupe, cap at 6.
     private func recordSearch(_ q: String) {
-        let trimmed = q.trimmingCharacters(in: .whitespaces)
+        let trimmed = q.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         var list = recents.filter { $0.caseInsensitiveCompare(trimmed) != .orderedSame }
         list.insert(trimmed, at: 0)
@@ -71,9 +77,10 @@ struct V3FindScreen: View {
             VStack(alignment: .leading, spacing: 0) {
                 titleBlock
                 searchBar
-                if query.isEmpty {
+                if !hasQuery {
                     if !allTags.isEmpty { tagCloud }
                     if !recents.isEmpty { recentSearches }
+                    if allTags.isEmpty && recents.isEmpty { searchHint }
                 } else {
                     resultList
                 }
@@ -94,7 +101,7 @@ struct V3FindScreen: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") { searchFocused = false }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.body.weight(.semibold))
                     .accessibilityIdentifier("v3-keyboard-done")
             }
         }
@@ -112,7 +119,7 @@ struct V3FindScreen: View {
             .tracking(-0.7)
 
             Text("Search by name, tag, or anything you wrote in the notes.")
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(palette.ink2)
         }
         .padding(.horizontal, 22)
@@ -124,12 +131,17 @@ struct V3FindScreen: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(palette.ink3)
-            TextField("bay leaves, #cables, charger…", text: $query)
-                .font(.system(size: 16))
+            TextField("Search your places", text: $query,
+                      prompt: Text("bay leaves, #cables, charger…").foregroundStyle(palette.ink2))
+                .font(.body)
                 .foregroundStyle(palette.ink)
                 .tracking(-0.15)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
                 .submitLabel(.search)
                 .focused($searchFocused)
+                .accessibilityLabel("Search your places")
+                .accessibilityHint("Search names and notes, or begin with a hash to search tags")
                 .accessibilityIdentifier("v3-search-input")
                 .onSubmit { recordSearch(query) }
             if !query.isEmpty {
@@ -137,11 +149,16 @@ struct V3FindScreen: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 18))
                         .foregroundStyle(palette.ink3)
+                        .frame(width: 44, height: 44)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+                .accessibilityIdentifier("v3-search-clear")
             }
         }
         .padding(.horizontal, 16)
-        .frame(height: 50)
+        .frame(minHeight: 50)
+        .padding(.vertical, 3)
         .background(palette.surface, in: Capsule())
         .shadow(color: .black.opacity(0.05), radius: 4, y: 1)
         .padding(.horizontal, 22)
@@ -156,9 +173,10 @@ struct V3FindScreen: View {
                     ForEach(allTags.prefix(16), id: \.self) { tag in
                         Button { query = tag } label: {
                             Text(tag)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(palette.ink)
                                 .padding(.horizontal, 12).padding(.vertical, 7)
+                                .frame(minHeight: 44)
                                 .background(palette.accentBg, in: Capsule())
                         }
                         .buttonStyle(.plain)
@@ -178,8 +196,9 @@ struct V3FindScreen: View {
                 Spacer()
                 Button { clearRecents() } label: {
                     Text("Clear")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(palette.ink3)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(palette.ink2)
+                        .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("v3-recent-clear")
@@ -192,7 +211,7 @@ struct V3FindScreen: View {
                             Image(systemName: "clock")
                                 .foregroundStyle(palette.ink3)
                             Text(s)
-                                .font(.system(size: 15))
+                                .font(.body)
                                 .foregroundStyle(palette.ink)
                             Spacer()
                             Image(systemName: "arrow.up.left")
@@ -216,10 +235,28 @@ struct V3FindScreen: View {
 
     @ViewBuilder private var resultList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("\(results.count) \(results.count == 1 ? "match" : "matches")")
-                .font(.system(size: 12))
-                .foregroundStyle(palette.ink3)
-                .padding(.top, 20)
+            HStack {
+                Text("\(results.count) \(results.count == 1 ? "match" : "matches")")
+                    .font(.caption)
+                    .foregroundStyle(palette.ink2)
+                Spacer()
+                if results.isEmpty {
+                    Button {
+                        query = ""
+                        searchFocused = false
+                    } label: {
+                        Text("Clear search")
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(palette.accent)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(SwiftUI.Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("v3-search-empty-clear")
+                }
+            }
+            .frame(minHeight: 44)
+            .padding(.top, 12)
             if results.isEmpty {
                 emptyState
             } else {
@@ -245,16 +282,37 @@ struct V3FindScreen: View {
         .padding(.horizontal, 22)
     }
 
+    @ViewBuilder private var searchHint: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Start with a name or tag")
+                .font(.headline)
+                .foregroundStyle(palette.ink)
+            Text("Your saved rooms and places appear as you type. Use # to search only tags.")
+                .font(.subheadline)
+                .foregroundStyle(palette.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 22)
+        .padding(.top, 32)
+        .accessibilityIdentifier("v3-search-hint")
+    }
+
     @ViewBuilder private var emptyState: some View {
         VStack(spacing: 12) {
             FlowerMark(size: 28, color: palette.ink3, pollen: palette.ink3)
                 .opacity(0.5)
-            Text("Nothing here for ")
+                .accessibilityHidden(true)
+            Text("Nothing here for “\(query.trimmingCharacters(in: .whitespacesAndNewlines))” yet.")
+                .font(.headline)
+                .foregroundStyle(palette.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("v3-search-empty")
+            Text("Try a shorter name, a different tag, or a word from your notes.")
+                .font(.subheadline)
                 .foregroundStyle(palette.ink2)
-            + Text("\"\(query)\"")
-                .foregroundStyle(palette.ink2).italic()
-            + Text(" yet.")
-                .foregroundStyle(palette.ink2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
@@ -320,11 +378,11 @@ private struct V3SearchResultRow: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(palette.ink)
                     .tracking(-0.15)
                 Text(ancestry)
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(palette.ink3)
                     .lineLimit(1)
             }

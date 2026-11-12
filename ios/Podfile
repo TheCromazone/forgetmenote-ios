@@ -12,9 +12,8 @@ def forgetmenote_pods
     pod 'GoogleMLKit/ImageLabeling'
   end
 
-  # In-app purchases
-  pod 'RevenueCat'
-  pod 'RevenueCatUI'
+  # Subscription screens are local prototypes and do not import an IAP SDK.
+  # Add RevenueCat here when real offerings/products are wired into the app.
 end
 
 target 'ForgetMeNote' do

@@ -82,14 +82,18 @@ struct V3Walkthrough: View {
                 .padding(.horizontal, 24)
                 .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
 
-                Button("Skip") { onFinish() }
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .padding(.top, 16)
-                    .accessibilityIdentifier("v3-tour-skip")
+                Button(action: onFinish) {
+                    Text("Skip")
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(SwiftUI.Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 16)
+                .accessibilityIdentifier("v3-tour-skip")
                 Spacer()
             }
         }
-        .accessibilityIdentifier("v3-walkthrough")
     }
 }

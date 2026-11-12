@@ -35,6 +35,19 @@ final class SearchFilterTests: XCTestCase {
         XCTAssertEqual(results.first?.name, "USB-C Charger")
     }
 
+    func testHashTagSearchMatchesTagsOnly() {
+        let items = makeItems()
+        XCTAssertEqual(v3FilterItems(items, query: " #CABLES \n").first?.name, "USB-C Charger")
+        XCTAssertTrue(v3FilterItems(items, query: "#charger").isEmpty)
+        XCTAssertTrue(v3FilterItems(items, query: "#").isEmpty)
+    }
+
+    func testWhitespaceIncludesNewlines() {
+        let items = makeItems()
+        XCTAssertTrue(v3FilterItems(items, query: " \n\t ").isEmpty)
+        XCTAssertEqual(v3FilterItems(items, query: "\n charger \n").first?.name, "USB-C Charger")
+    }
+
     func testMatchByNotes() {
         let items = makeItems()
         let results = v3FilterItems(items, query: "spice")

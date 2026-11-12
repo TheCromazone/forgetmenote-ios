@@ -3,6 +3,9 @@ options:
   bundleIdPrefix: com.imageorganizer
   deploymentTarget:
     iOS: "17.0"
+  # CocoaPods creates these xcconfigs after the initial project generation.
+  disabledValidations:
+    - missingConfigFiles
   createIntermediateGroups: true
   generateEmptyDirectories: true
 

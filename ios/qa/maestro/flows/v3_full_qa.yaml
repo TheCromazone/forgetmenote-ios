@@ -61,7 +61,8 @@ appId: com.matthewcromaz.forgetmenote.v3.dev
 - assertVisible:
     id: "v3-home-greeting"
 - takeScreenshot: v3_02_home
-- assertVisible: "Your rooms"
+- assertVisible:
+    id: "v3-browse-tree"
 - takeScreenshot: v3_03_home_full
 
 # === Step 3: Find tab — use point tap (middle of tab bar at bottom) ===
