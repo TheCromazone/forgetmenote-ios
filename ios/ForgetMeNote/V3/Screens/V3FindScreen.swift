@@ -247,7 +247,7 @@ struct V3FindScreen: View {
                     } label: {
                         Text("Clear search")
                             .font(.callout.weight(.semibold))
-                            .foregroundStyle(palette.accent)
+                            .foregroundStyle(palette.ink)
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(SwiftUI.Rectangle())
                     }
